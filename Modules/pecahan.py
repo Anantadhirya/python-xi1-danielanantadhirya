@@ -2,7 +2,8 @@ import math
 max_digit = 4
 digit = 0
 max_cari = 20
-max_pangkat = 3
+max_pangkat = 2
+max_akar = 100
 sup = {
     "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶",
     "7": "⁷", "8": "⁸", "9": "⁹", "a": "ᵃ", "b": "ᵇ", "c": "ᶜ", "d": "ᵈ",
@@ -15,6 +16,18 @@ sup = {
     "U": "ᵁ", "V": "ⱽ", "W": "ᵂ", "X": "ˣ", "Y": "ʸ", "Z": "ᶻ", "+": "⁺",
     "-": "⁻", "=": "⁼", "(": "⁽", ")": "⁾"
     }
+sub = {
+    "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆",
+    "7": "₇", "8": "₈", "9": "₉", "a": "ₐ", "b": "b", "c": "c", "d": "d",
+    "e": "ₑ", "f": "f", "g": "g", "h": "ₕ", "i": "ᵢ", "j": "ⱼ", "k": "ₖ",
+    "l": "ₗ", "m": "ₘ", "n": "ₙ", "o": "ₒ", "p": "ₚ", "q": "q", "r": "ᵣ",
+    "s": "ₛ", "t": "ₜ", "u": "ᵤ", "v": "ᵥ", "w": "w", "x": "ₓ", "y": "y",
+    "z": "z", "+": "₊", "-": "₋", "=": "₌", "(": "₍", ")": "₎"
+}
+konstanta = {
+    "π": [math.pi, 3.14, 22/7], "g": [9.807, 9.8,  10], "R (J/mol.K)": [8.3144621, 8.314, 8.31],
+    "R (liter.atm/mol.K)": [0.08205746, 0.082], "k": [1.38064852e-23, 1.38e-23]
+}
 
 def akar_pangkat(pangkat):
     """Fungsi untuk mengeluarkan string berupa akar pangkat"""
@@ -31,7 +44,7 @@ def simplify(pembilang, penyebut, keepDivisor1 = False):
     penyebut //= FPB
     return "{}/{}".format(pembilang, penyebut) if keepDivisor1 or penyebut != 1 else "{}".format(pembilang)
 
-def simplify2(a, b, c, C, keep1 = False):
+def simplify2(a, b, c, C, keep01 = False):
     """Fungsi untuk menyederhanakan bentuk (a + b.C)/c"""
     # Keterangan:
     # a, b, c ∈ ℤ
@@ -41,19 +54,20 @@ def simplify2(a, b, c, C, keep1 = False):
     b //= FPB
     c //= FPB
     ret = ""
-    if keep1:
-        ret = "({} + {}.{})/{}".format(a, b, C, c)
+    if keep01:
+        ret = "({} + {}{})/{}".format(a, b, C, c)
     else:
         ret = "{}".format(C)
         # ret = C
         if b != 1:
-            ret = "{}.{}".format(b, ret)
+            ret = "{}{}".format(b, ret)
         # ret = b.C
         if a != 0:
             ret = "{} + {}".format(a, ret)
         # ret = a + b.C
         if c != 1:
             ret = "({})/{}".format(ret, c)
+        # ret = (a + b.C)/c
     return ret
 
 def fp(angka, asString = True):
@@ -70,7 +84,7 @@ def fp(angka, asString = True):
         else:
             faktor += 1
     if asString:
-        ret = " ‧ ".join(["{}{}".format(i, sup[str(j)]) for i,j in ret.items()])
+        ret = " . ".join(["{}{}".format(i, sup[str(j)]) for i,j in ret.items()])
     return ret
 
 def sama(float1, float2):
@@ -83,40 +97,12 @@ def konsto(angka, kons, nama_kons):
     # C ∈ ℝ
     ret = []
     max_abc = 10**digit+1
-    
-    # Bentuk C = angka
-    if sama(kons, angka):
-        ret.append(("{}".format(nama_kons), abs(kons-angka)))
-    
-    # Bentuk a + C = angka
-    if sama(kons % 1, angka % 1):
-        a = round(angka - kons)
-        if a != 0: ret.append(("{} + {}".format(a, nama_kons), abs(a + kons - angka)))
-    
-    # Bentuk a.C = angka
-    a = round(angka/kons)
-    if sama(a * kons, angka):
-        if a != 1: ret.append(("{}{}".format(a, nama_kons), abs(a*kons - angka)))
-    
-    # Bentuk a + b.C = angka
-    for b in range(2, max_abc):
-        if sama((b * kons)%1, angka%1):
-            a = round(angka - b*kons)
-            if a != 0: ret.append(("{} + {}{}".format(a, b, nama_kons), abs(a + b*kons - angka)))
-    
-    # Bentuk C/a = angka
-    a = round(kons/angka)
-    if a != 0 and sama(kons/a, angka):
-        if a != 1: ret.append(("{}/{}".format(nama_kons, a), abs(kons/a - angka)))
-    
     # Bentuk (a + b.C)/c = angka
-    for c in range(2, max_abc):
-        for b in range(2, max_abc):
+    for c in range(1, max_abc):
+        for b in range(1, max_abc):
             if sama((b*kons)%1, (c*angka)%1):
                 a = round(c*angka - b*kons)
-                # belum selesai
-            
-    
+                ret.append((simplify2(a, b, c, nama_kons), abs(a + b*kons - c*angka)))
     ret = sorted(list(set(ret)), key=lambda x: x[1])[:max_cari]
     return ret
 
@@ -133,7 +119,7 @@ def dtor(angka):
     """'Decimal to Root' -> Fungsi untuk mengubah float menjadi bentuk akar (√)"""
     ret = []
     for pangkat in range(2, max_pangkat+1):
-        for i in range(2, 10**digit+1):
+        for i in range(2, max_akar):
             akar = i**(1/pangkat)
             ret += konsto(angka, akar, "{}{}".format(akar_pangkat(pangkat), i))
     ret = sorted(list(set(ret)), key=lambda x: x[1])[:max_cari]
@@ -145,6 +131,7 @@ def uncalc(angka):
     global digit
     digit = min(max_digit, len(str(angka).split('.')[1]) if '.' in str(angka) else 0)
     ret = []
+    if type(angka) == int: ret += (fp(angka), 0)
     ret += dtof(angka)
     ret += dtor(angka)
     
