@@ -133,7 +133,7 @@ def uncalc(angka):
     ret = []
     if type(angka) == int: ret += (fp(angka), 0)
     ret += dtof(angka)
-    ret += dtor(angka)
+    #ret += dtor(angka)
     
     max_len = max(len(str(i[0])) for i in ret)
     ret = sorted(list(set([(str(i[0]) + ' '*(max_len-len(str(i[0]))), i[1]) for i in ret])), key=lambda x:x[1])[:max_cari]
